@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       { expiresIn: '7d' } // Le token expire dans 7 jours
     );
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       user: {
         id: user.id,
         firstName: user.firstName,
@@ -78,6 +78,17 @@ export async function POST(request: Request) {
       },
       token,
     });
+
+    // Set the token as an HTTP-only cookie
+    response.cookies.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      path: '/',
+      sameSite: 'lax',
+    });
+
+    return response;
   } catch (error) {
     console.error('Erreur inscription:', error);
     return NextResponse.json(

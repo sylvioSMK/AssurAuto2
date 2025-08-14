@@ -22,6 +22,16 @@ interface User {
 
 
 
+// Fonction pour récupérer un cookie par son nom
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
 export default function SetupInsurance() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -178,10 +188,14 @@ export default function SetupInsurance() {
     setIsSubmitting(true);
     
     try {
+      // Récupérer le token depuis localStorage ou les cookies
+      const token = localStorage.getItem('token') || getCookie('token');
+      
       const response = await fetch('/api/auth/setup-insurance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'x-auth-token': token } : {}),
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -442,7 +456,7 @@ export default function SetupInsurance() {
                     </div>
                   </div>
 
-                  <div className="bg-green-50 p-6 rounded-lg">
+                  {/* <div className="bg-green-50 p-6 rounded-lg">
                     <h3 className="text-lg font-bold text-green-800 mb-4">Choisissez votre mode de paiement</h3>
                     <div className="space-y-4">
                       <div className="flex items-center space-x-3">
@@ -484,7 +498,7 @@ export default function SetupInsurance() {
                         </label>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
 
                 {error && (

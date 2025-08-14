@@ -53,6 +53,13 @@ export function getTokenFromRequest(request: Request): string | null {
     return authHeader.substring(7);
   }
   
+  // Vérification supplémentaire pour les environnements de développement
+  // où les cookies peuvent être passés différemment
+  const tokenFromHeaders = request.headers.get('x-auth-token');
+  if (tokenFromHeaders) {
+    return tokenFromHeaders;
+  }
+  
   return null;
 }
 
