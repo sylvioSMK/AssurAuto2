@@ -5,14 +5,14 @@ import { Alert } from '@/lib/types';
 
 interface NotificationDropdownProps {
   alerts: Alert[];
-  onMarkAsRead: (alertId: string) => void;
-  onMarkAllAsRead: () => void;
+  userId: string;
 }
 
-export default function NotificationDropdown({ alerts, onMarkAsRead, onMarkAllAsRead }: NotificationDropdownProps) {
+export default function NotificationDropdown({ alerts, userId }: NotificationDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
+  // Filtrer les alertes comme dans 'Prochaines Échéances' (alertes non lues)
   const unreadAlerts = alerts.filter(alert => !alert.isRead);
   
   // Fermer le dropdown quand on clique à l'extérieur
@@ -29,14 +29,36 @@ export default function NotificationDropdown({ alerts, onMarkAsRead, onMarkAllAs
     };
   }, []);
   
-  const handleMarkAsRead = (alertId: string) => {
-    onMarkAsRead(alertId);
+  const handleMarkAsRead = async (alertId: string) => {
+    try {
+      await fetch(`/api/dashboard/alerts/read`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ alertId }),
+        credentials: 'include'
+      });
+      // Refresh alerts after marking as read
+      window.location.reload();
+    } catch (error) {
+      console.error('Error marking alert as read:', error);
+    }
     // Fermer le dropdown après avoir marqué comme lu
     setIsOpen(false);
   };
   
-  const handleMarkAllAsRead = () => {
-    onMarkAllAsRead();
+  const handleMarkAllAsRead = async () => {
+    try {
+      await fetch(`/api/dashboard/alerts/read-all`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      // Refresh alerts after marking all as read
+      window.location.reload();
+    } catch (error) {
+      console.error('Error marking all alerts as read:', error);
+    }
     // Fermer le dropdown après avoir tout marqué comme lu
     setIsOpen(false);
   };

@@ -126,15 +126,23 @@ export async function POST(request: Request) {
         // Créer une alerte pour cette assurance
         const expirationDate = new Date(insurance.expirationDate);
         const alertDate = new Date(expirationDate);
-        alertDate.setDate(alertDate.getDate() - 7); // 7 jours avant
+
+        // Récupérer les paramètres utilisateur pour déterminer quand créer l'alerte
+        const userSettings = await prisma.user.findUnique({
+          where: { id: decoded.userId },
+          include: { userSettings: true }
+        });
+        const alertDaysBefore = userSettings?.userSettings?.alertDaysBefore || 7;
+
+        alertDate.setDate(alertDate.getDate() - alertDaysBefore); // Ajuster selon le paramètre utilisateur
 
         await prisma.alert.create({
           data: {
             userId: decoded.userId,
-            insuranceId: newInsurance.id, // ✅ Maintenant on a l'ID
+            insuranceId: newInsurance.id,
             type: 'expiry',
             title: 'Expiration d\'assurance',
-            message: `Votre assurance ${insurance.type} expire dans 7 jours.`,
+            message: `Votre assurance ${insurance.type} expire dans ${alertDaysBefore} jours.`,
             alertDate
           }
         });

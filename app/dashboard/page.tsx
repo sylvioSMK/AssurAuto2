@@ -4,28 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
 import NotificationDropdown from '@/components/NotificationDropdown';
-
-interface Insurance {
-  id: string;
-  type: string;
-  vehicleModel: string;
-  vehicleYear: string;
-  expirationDate: string;
-  estimatedCost: number;
-  status: 'active' | 'expiring_soon' | 'expired';
-  daysUntilExpiry: number;
-}
-
-interface User {
-  id: string; // Prisma cuid() est un string
-  firstName: string;
-  lastName: string;
-  email: string;
-  totalBalance: number;
-  monthlyContribution: number;
-}
-
-import { Alert } from '@/lib/types';
+import { useFilteredAlerts } from '@/hooks/useFilteredAlerts';
+import { Insurance, User, Alert } from '@/types/dashboard';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -33,11 +13,21 @@ export default function Dashboard() {
   const [insurances, setInsurances] = useState<Insurance[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const authGuardRef = useRef<{ checkAuth: () => Promise<boolean> }>(null);
+
+  // Filtrer les alertes avec le hook
+  const filteredAlerts = useFilteredAlerts(alerts, insurances);
 
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
+        // Générer les alertes pour les assurances expirant bientôt
+        await fetch('/api/alerts/generate', {
+          method: 'POST',
+          credentials: 'include'
+        });
+
         // Charger les données utilisateur depuis le serveur pour s'assurer qu'elles sont à jour
         const userResponse = await fetch('/api/dashboard/user', {
           credentials: 'include'
@@ -58,9 +48,7 @@ export default function Dashboard() {
           }
 
           // Charger les alertes
-          const alertsResponse = await fetch('/api/dashboard/alerts', {
-            credentials: 'include'
-          });
+          const alertsResponse = await fetch('/api/dashboard/alerts');
           if (alertsResponse.ok) {
             const alertsData = await alertsResponse.json();
             setAlerts(alertsData.alerts || []);
@@ -221,29 +209,8 @@ export default function Dashboard() {
             <div className="flex items-center space-x-4">
               {/* 🔔 Notifications */}
               <NotificationDropdown 
-                alerts={alerts}
-                onMarkAsRead={async (alertId) => {
-                  try {
-                    const response = await fetch(`/api/dashboard/alerts/read/${alertId}`, { method: 'POST' });
-                    if (response.ok) {
-                      setAlerts(alerts.map(alert => 
-                        alert.id === alertId ? { ...alert, isRead: true } : alert
-                      ));
-                    }
-                  } catch (error) {
-                    console.error('Erreur lors du marquage comme lu:', error);
-                  }
-                }}
-                onMarkAllAsRead={async () => {
-                  try {
-                    const response = await fetch(`/api/dashboard/alerts/read-all`, { method: 'POST' });
-                    if (response.ok) {
-                      setAlerts(alerts.map(alert => ({ ...alert, isRead: true })));
-                    }
-                  } catch (error) {
-                    console.error('Erreur lors du marquage comme lu:', error);
-                  }
-                }}
+                alerts={filteredAlerts}
+                userId={user?.id || ''}
               />
 
               {/* 👤 Profil */}
