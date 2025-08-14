@@ -1,0 +1,145 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Utilisateur
+model User {
+  id                 String      @id @default(cuid())
+  firstName          String
+  lastName           String
+  phone              String      @unique
+  password           String
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  // Relations
+  vehicles           Vehicle[]
+  insurances         Insurance[]
+  transactions       Transaction[]
+  userSettings       UserSettings?
+  userSavings        UserSavings?
+  alerts             Alert[]
+}
+
+// Véhicule
+model Vehicle {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  brand        String
+  model        String
+  year         Int
+  licensePlate String
+  vin          String?
+  color        String?
+  dateCreated  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  insurances   Insurance[]
+}
+
+// Assurance
+model Insurance {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id])
+  vehicleId           String
+  vehicle             Vehicle  @relation(fields: [vehicleId], references: [id])
+  insuranceTypeId     String
+  insuranceType       InsuranceType @relation(fields: [insuranceTypeId], references: [id])
+  policyNumber        String   @unique
+  startDate           DateTime
+  expirationDate      DateTime
+  estimatedCost       Float
+  actualCost          Float?
+  status              String   @default("active") // active, expiring_soon, expired, canceled
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  transactions        Transaction[]
+  alerts              Alert[]
+}
+
+// Type d'assurance
+model InsuranceType {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  code      String      @unique
+  description String?
+  coverage  Float
+  isPublic  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+
+  insurances Insurance[]
+}
+
+// Transaction
+model Transaction {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  insuranceId      String?
+  insurance        Insurance? @relation(fields: [insuranceId], references: [id])
+  type             String   // contribution, payment, withdrawal
+  amount           Float
+  paymentMethod    String   // mobile_money, bank_transfer, cash
+  referenceNumber  String   @unique
+  description      String?
+  status           String   @default("completed") // completed, failed, pending
+  dateCreated      DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// Épargne utilisateur
+model UserSavings {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id])
+  totalBalance           Float    @default(0)
+  monthlyContribution    Float    @default(0)
+  autoContribution       Boolean  @default(false)
+  contributionDay        Int      @default(1) // jour du mois
+  isSuspended            Boolean  @default(false)
+  suspensionEndDate      DateTime?
+  lastContributionDate   DateTime?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+// Paramètres utilisateur
+model UserSettings {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
+  user                    User     @relation(fields: [userId], references: [id])
+  notificationEmail       Boolean  @default(true)
+  notificationSms         Boolean  @default(true)
+  alertDaysBefore         Int      @default(7)
+  preferredPaymentMethod  String?  // mobile_money, bank_transfer
+  timezone                String   @default("Africa/Lome")
+  language                String   @default("fr")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+// Alertes
+model Alert {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  insuranceId String?
+  insurance   Insurance? @relation(fields: [insuranceId], references: [id])
+  type        String   // expiry, payment, system
+  title       String
+  message     String
+  alertDate   DateTime
+  isRead      Boolean  @default(false)
+  dateCreated DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
