@@ -25,9 +25,17 @@ export async function GET(request: Request) {
       );
     }
 
-    // Récupérer les alertes de l'utilisateur
+    // Récupérer les alertes de l'utilisateur avec les informations d'assurance
     const userAlerts = await prisma.alert.findMany({
       where: { userId: decoded.userId },
+      include: {
+        insurance: {
+          include: {
+            insuranceType: true,
+            vehicle: true
+          }
+        }
+      },
       orderBy: { dateCreated: 'desc' }
     });
 

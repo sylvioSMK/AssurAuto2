@@ -25,4 +25,15 @@ export interface Alert {
   type: string;
   isRead: boolean;
   insuranceId?: string;
+  insurance?: {
+    id: string;
+    type: string;
+    expirationDate: Date;
+    insuranceType?: {
+      name: string;
+    };
+    vehicle?: {
+      model: string;
+    };
+  };
 }

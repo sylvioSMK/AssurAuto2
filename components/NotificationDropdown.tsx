@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Alert } from '@/lib/types';
+import { Alert } from '@/types/dashboard';
 
 interface NotificationDropdownProps {
   alerts: Alert[];
@@ -14,6 +14,37 @@ export default function NotificationDropdown({ alerts, userId }: NotificationDro
   
   // Filtrer les alertes comme dans 'Prochaines Échéances' (alertes non lues)
   const unreadAlerts = alerts.filter(alert => !alert.isRead);
+  
+  // Fonction pour calculer le nombre de jours restants
+  const getDaysUntilExpiry = (expirationDate: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expiry = new Date(expirationDate);
+    expiry.setHours(0, 0, 0, 0);
+    
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+  };
+  
+  // Fonction pour générer un message dynamique
+  const getDynamicMessage = (alert: Alert) => {
+    if (alert.insurance && alert.insurance.expirationDate) {
+      const daysLeft = getDaysUntilExpiry(alert.insurance.expirationDate);
+      
+      if (daysLeft > 0) {
+        return `Votre ${alert.insurance.insuranceType?.name || alert.insurance.type} pour votre ${alert.insurance.vehicle?.model || 'véhicule'} expire dans ${daysLeft} jours.`;
+      } else if (daysLeft === 0) {
+        return `Votre ${alert.insurance.insuranceType?.name || alert.insurance.type} pour votre ${alert.insurance.vehicle?.model || 'véhicule'} expire aujourd'hui!`;
+      } else {
+        return `Votre ${alert.insurance.insuranceType?.name || alert.insurance.type} pour votre ${alert.insurance.vehicle?.model || 'véhicule'} a expiré il y a ${Math.abs(daysLeft)} jours.`;
+      }
+    }
+    
+    // Retourner le message original si aucune information d'assurance n'est disponible
+    return alert.message;
+  };
   
   // Fermer le dropdown quand on clique à l'extérieur
   useEffect(() => {
@@ -99,7 +130,7 @@ export default function NotificationDropdown({ alerts, userId }: NotificationDro
                     <div className="flex justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-900">{alert.title}</p>
-                        <p className="text-sm text-gray-500 mt-1">{alert.message}</p>
+                        <p className="text-sm text-gray-500 mt-1">{getDynamicMessage(alert)}</p>
                       </div>
                       <button 
                         onClick={() => handleMarkAsRead(alert.id)}
