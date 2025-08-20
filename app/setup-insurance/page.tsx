@@ -49,6 +49,8 @@ export default function SetupInsurance() {
   const [suggestedContribution, setSuggestedContribution] = useState(0);
   const [customContribution, setCustomContribution] = useState(0);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('yas');
+  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
+  const [periodCost, setPeriodCost] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -118,6 +120,27 @@ export default function SetupInsurance() {
     };
   }, [router]);
 
+  // 🔁 Calculer les coûts selon la période sélectionnée
+  useEffect(() => {
+    if (totalEstimated > 0) {
+      let periodCost = 0;
+      switch (selectedPeriod) {
+        case 'week':
+          periodCost = Math.round(totalEstimated / 52);
+          break;
+        case 'month':
+          periodCost = Math.round(totalEstimated / 12);
+          break;
+        case 'year':
+          periodCost = totalEstimated;
+          break;
+      }
+      setPeriodCost(periodCost);
+      setSuggestedContribution(periodCost);
+      setCustomContribution(periodCost);
+    }
+  }, [totalEstimated, selectedPeriod]);
+
   // 🔁 Sauvegarder dans localStorage à chaque changement
   useEffect(() => {
     if (!user) return;
@@ -130,12 +153,7 @@ export default function SetupInsurance() {
     }
     const total = insurances.reduce((sum, ins) => sum + ins.estimatedCost, 0);
     setTotalEstimated(total);
-    const suggested = Math.round(total / 12);
-    setSuggestedContribution(suggested);
-    if (customContribution === 0 || customContribution === suggestedContribution) {
-      setCustomContribution(suggested);
-    }
-  }, [insurances, suggestedContribution, customContribution, user]);
+  }, [insurances, user]);
 
   const calculateEstimatedCost = (type: string, year: string) => {
     const baseType = insuranceTypes.find(t => t.value === type);
@@ -456,49 +474,87 @@ export default function SetupInsurance() {
                     </div>
                   </div>
 
-                  {/* <div className="bg-green-50 p-6 rounded-lg">
-                    <h3 className="text-lg font-bold text-green-800 mb-4">Choisissez votre mode de paiement</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <input 
-                          type="radio" 
-                          id="yas" 
-                          name="payment" 
-                          value="yas"
-                          checked={selectedPaymentMethod === 'yas'}
-                          onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                          className="cursor-pointer" 
-                        />
-                        <label htmlFor="yas" className="cursor-pointer">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center mr-2">
-                              <span className="text-white text-xs font-bold">Y</span>
-                            </div>
-                            <span className="font-medium">YAS Money</span>
-                          </div>
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <input 
-                          type="radio" 
-                          id="flooz" 
-                          name="payment" 
-                          value="flooz"
-                          checked={selectedPaymentMethod === 'flooz'}
-                          onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                          className="cursor-pointer" 
-                        />
-                        <label htmlFor="flooz" className="cursor-pointer">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center mr-2">
-                              <span className="text-white text-xs font-bold">F</span>
-                            </div>
-                            <span className="font-medium">Flooz</span>
-                          </div>
-                        </label>
-                      </div>
+                <div className="bg-green-50 p-6 rounded-lg">
+                  <h3 className="text-lg font-bold text-green-800 mb-4">Choisissez votre période de paiement</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-3">
+                      <input 
+                        type="radio" 
+                        id="week" 
+                        name="period" 
+                        value="week"
+                        checked={selectedPeriod === 'week'}
+                        onChange={(e) => setSelectedPeriod(e.target.value as 'week' | 'month' | 'year')}
+                        className="cursor-pointer" 
+                      />
+                      <label htmlFor="week" className="cursor-pointer">
+                        <span className="font-medium">Par semaine</span>
+                      </label>
                     </div>
-                  </div> */}
+                    <div className="flex items-center space-x-3">
+                      <input 
+                        type="radio" 
+                        id="month" 
+                        name="period" 
+                        value="month"
+                        checked={selectedPeriod === 'month'}
+                        onChange={(e) => setSelectedPeriod(e.target.value as 'week' | 'month' | 'year')}
+                        className="cursor-pointer" 
+                      />
+                      <label htmlFor="month" className="cursor-pointer">
+                        <span className="font-medium">Par mois</span>
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <input 
+                        type="radio" 
+                        id="year" 
+                        name="period" 
+                        value="year"
+                        checked={selectedPeriod === 'year'}
+                        onChange={(e) => setSelectedPeriod(e.target.value as 'week' | 'month' | 'year')}
+                        className="cursor-pointer" 
+                      />
+                      <label htmlFor="year" className="cursor-pointer">
+                        <span className="font-medium">Par année</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {totalEstimated > 0 && (
+                  <div className="bg-blue-50 p-6 rounded-lg">
+                    <h4 className="text-lg font-bold text-blue-800 mb-4">Estimation des coûts</h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-blue-700">Coût total annuel:</span>
+                        <span className="font-semibold text-blue-800">{totalEstimated.toLocaleString()} FCFA</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-blue-700">Montant par {selectedPeriod === 'week' ? 'semaine' : selectedPeriod === 'month' ? 'mois' : 'année'}:</span>
+                        <span className="font-bold text-green-600 text-xl">{periodCost.toLocaleString()} FCFA</span>
+                      </div>
+                      {selectedPeriod === 'week' && (
+                        <div className="text-sm text-gray-600">
+                          <p>• Soit {Math.round(periodCost * 4.33).toLocaleString()} FCFA par mois</p>
+                          <p>• Soit {(periodCost * 52).toLocaleString()} FCFA par an</p>
+                        </div>
+                      )}
+                      {selectedPeriod === 'month' && (
+                        <div className="text-sm text-gray-600">
+                          <p>• Soit {(periodCost * 12).toLocaleString()} FCFA par an</p>
+                          <p>• Soit {Math.round(periodCost / 4.33).toLocaleString()} FCFA par semaine</p>
+                        </div>
+                      )}
+                      {selectedPeriod === 'year' && (
+                        <div className="text-sm text-gray-600">
+                          <p>• Soit {Math.round(periodCost / 12).toLocaleString()} FCFA par mois</p>
+                          <p>• Soit {Math.round(periodCost / 52).toLocaleString()} FCFA par semaine</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 </div>
 
                 {error && (
