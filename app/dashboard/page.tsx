@@ -272,7 +272,7 @@ export default function Dashboard() {
                 <i className="ri-calendar-line text-2xl text-blue-600"></i>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Cotisation Mensuelle</p>
+                <p className="text-sm font-medium text-gray-600">Cotisation totale</p>
                 <p className="text-2xl font-bold text-blue-600">{user.monthlyContribution?.toLocaleString()} FCFA</p>
               </div>
             </div>
