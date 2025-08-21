@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
 import NotificationDropdown from '@/components/NotificationDropdown';
+import ContributionMonthsDisplay from '@/components/ContributionMonthsDisplay';
 import { useFilteredAlerts } from '@/hooks/useFilteredAlerts';
 import { Insurance, User, Alert } from '@/types/dashboard';
 
@@ -461,6 +462,9 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
+
+            {/* Progression des cotisations */}
+            <ContributionMonthsDisplay user={user} insurances={insurances} />
           </div>
         </div>
     </div>
