@@ -22,7 +22,7 @@ export default function Home() {
             <nav className="hidden md:flex space-x-8">
               <a href="#services" className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer">Services</a>
               <a href="#features" className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer">Fonctionnalités</a>
-              <a href="#contact" className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer">Contact</a>
+            {/*  <a href="#contact" className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer">Contact</a> */}
             </nav>
 
             <div className="flex items-center space-x-4">
