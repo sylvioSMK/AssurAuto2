@@ -60,6 +60,15 @@ export async function POST(request: Request) {
         throw new Error('Utilisateur non trouvé');
       }
 
+      // Récupérer la cotisation mensuelle actuelle de l'utilisateur
+      const currentUserSavings = await prisma.userSavings.findUnique({
+        where: { userId: decoded.userId },
+        select: { monthlyContribution: true },
+      });
+
+      const currentMonthlyContribution = currentUserSavings?.monthlyContribution || 0;
+      const newTotalMonthlyContribution = currentMonthlyContribution + monthlyContribution;
+
       // Créer les véhicules et assurances
       for (const insurance of insurances) {
         // Vérifier si le véhicule existe déjà
@@ -152,17 +161,17 @@ export async function POST(request: Request) {
       const userSavings = await prisma.userSavings.upsert({
         where: { userId: decoded.userId },
         update: {
-          monthlyContribution,
+          monthlyContribution: newTotalMonthlyContribution,
           autoContribution: true,
-          contributionDay: new Date().getDate()
+          contributionDay: new Date().getDate(),
         },
         create: {
           userId: decoded.userId,
-          monthlyContribution,
+          monthlyContribution: newTotalMonthlyContribution,
           autoContribution: true,
           contributionDay: new Date().getDate(),
-          totalBalance: 0
-        }
+          totalBalance: 0,
+        },
       });
 
       // Gérer les paramètres

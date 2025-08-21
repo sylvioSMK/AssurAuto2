@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
 import NotificationDropdown from '@/components/NotificationDropdown';
+import ContributionMonthsDisplay from '@/components/ContributionMonthsDisplay';
 import { useFilteredAlerts } from '@/hooks/useFilteredAlerts';
 import { Insurance, User, Alert } from '@/types/dashboard';
 
@@ -272,7 +273,7 @@ export default function Dashboard() {
                 <i className="ri-calendar-line text-2xl text-blue-600"></i>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Cotisation Mensuelle</p>
+                <p className="text-sm font-medium text-gray-600">Cotisation totale</p>
                 <p className="text-2xl font-bold text-blue-600">{user.monthlyContribution?.toLocaleString()} FCFA</p>
               </div>
             </div>
@@ -461,6 +462,9 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
+
+            {/* Progression des cotisations */}
+            <ContributionMonthsDisplay user={user} insurances={insurances} />
           </div>
         </div>
     </div>
