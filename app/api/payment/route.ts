@@ -23,13 +23,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Formatage du numéro (supprimer les espaces, +, etc.)
-    const cleanPhone = phoneNumber.replace(/\D/g, '');
-    if (!/^(228)?(9[0756][0-9]{6})$/.test(cleanPhone)) {
-      return NextResponse.json(
-        { message: 'Numéro de téléphone invalide', status: 4 },
-        { status: 400 }
-      );
-    }
+   const cleanPhone = phoneNumber.replace(/\D/g, '');
+if (!/^(228)?([79][015679][0-9]{6})$/.test(cleanPhone)) {
+  return NextResponse.json(
+    { message: 'Numéro de téléphone invalide', status: 4 },
+    { status: 400 }
+  );
+}
 
     // Numéro final (avec indicatif 228)
     const finalPhone = cleanPhone.startsWith('228') ? cleanPhone : `228${cleanPhone}`;
