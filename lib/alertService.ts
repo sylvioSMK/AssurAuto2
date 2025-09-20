@@ -156,3 +156,84 @@ export async function updateInsuranceStatuses() {
     return { success: false, error: (error as Error).message };
   }
 }
+
+/**
+ * Generate monthly payment reminders for users with auto-contribution enabled
+ */
+export async function generateMonthlyPaymentAlerts() {
+  try {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    let alertsCreated = 0;
+
+    // Get all users with auto-contribution enabled
+    const usersWithSavings = await prisma.userSavings.findMany({
+      where: {
+        autoContribution: true,
+        monthlyContribution: {
+          gt: 0 // Only users with a positive monthly contribution
+        },
+        isSuspended: false // Only for non-suspended savings
+      },
+      include: {
+        user: {
+          include: {
+            alerts: {
+              where: {
+                type: 'payment_reminder',
+                alertDate: {
+                  gte: new Date(currentYear, currentMonth, 1), // Alerts from current month
+                  lt: new Date(currentYear, currentMonth + 1, 1),
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    for (const userSavings of usersWithSavings) {
+      const user = userSavings.user;
+      const contributionDay = userSavings.contributionDay;
+      const monthlyContribution = userSavings.monthlyContribution;
+
+      // Determine the last day of the current month
+      const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      // Check if today is the designated contribution day or the last day of the month if contributionDay is past month end
+      const isContributionDay = today.getDate() === contributionDay ||
+        (today.getDate() === lastDayOfMonth && contributionDay > lastDayOfMonth);
+
+      // Check if an alert for the current month already exists
+      const existingMonthlyAlert = user.alerts.some(alert => {
+        const alertMonth = alert.alertDate.getMonth();
+        const alertYear = alert.alertDate.getFullYear();
+        return alertMonth === currentMonth && alertYear === currentYear;
+      });
+
+      if (isContributionDay && !existingMonthlyAlert) {
+        const message = `N'oubliez pas votre cotisation mensuelle de ${monthlyContribution.toLocaleString()} FCFA pour ce mois.`;
+        await prisma.alert.create({
+          data: {
+            userId: user.id,
+            type: 'payment_reminder',
+            title: 'Rappel de Cotisation Mensuelle',
+            message,
+            alertDate: today,
+          },
+        });
+        alertsCreated++;
+        // Update lastContributionDate to prevent duplicate alerts for this month
+        await prisma.userSavings.update({
+          where: { id: userSavings.id },
+          data: { lastContributionDate: today },
+        });
+      }
+    }
+    return { success: true, alertsCreated };
+  } catch (error) {
+    console.error('Error generating monthly payment alerts:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}

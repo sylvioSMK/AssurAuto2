@@ -30,7 +30,7 @@ export default function NotificationDropdown({ alerts, userId }: NotificationDro
   
   // Fonction pour générer un message dynamique
   const getDynamicMessage = (alert: Alert) => {
-    if (alert.insurance && alert.insurance.expirationDate) {
+    if (alert.type === 'expiry' && alert.insurance && alert.insurance.expirationDate) {
       const daysLeft = getDaysUntilExpiry(alert.insurance.expirationDate);
       
       if (daysLeft > 0) {
@@ -42,7 +42,11 @@ export default function NotificationDropdown({ alerts, userId }: NotificationDro
       }
     }
     
-    // Retourner le message original si aucune information d'assurance n'est disponible
+    if (alert.type === 'payment_reminder') {
+      return alert.message;
+    }
+
+    // Retourner le message original si aucune information d'assurance n'est disponible ou type inconnu
     return alert.message;
   };
   

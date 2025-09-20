@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateInsuranceExpirationAlerts, updateInsuranceStatuses } from '@/lib/alertService';
+import { generateInsuranceExpirationAlerts, updateInsuranceStatuses, generateMonthlyPaymentAlerts } from '@/lib/alertService';
 
 /**
  * API endpoint to generate insurance expiration alerts
@@ -20,11 +20,18 @@ export async function POST() {
     
     // Then generate alerts for upcoming expirations
     const result = await generateInsuranceExpirationAlerts();
-    
+
+    // Generate monthly payment alerts
+    const monthlyAlertResult = await generateMonthlyPaymentAlerts();
+    if (!monthlyAlertResult.success) {
+      console.error('Error generating monthly payment alerts:', monthlyAlertResult.error);
+    }
+
     if (result.success) {
       return NextResponse.json({ 
-        message: `Successfully generated ${result.alertsCreated} alerts`, 
-        alertsCreated: result.alertsCreated 
+        message: `Successfully generated ${result.alertsCreated} insurance alerts and ${monthlyAlertResult.alertsCreated || 0} monthly payment alerts`, 
+        alertsCreated: result.alertsCreated, 
+        monthlyAlertsCreated: monthlyAlertResult.alertsCreated || 0 
       });
     } else {
       return NextResponse.json(
